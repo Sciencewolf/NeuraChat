@@ -27,7 +27,7 @@ def make_api_call(question: str, state: list) -> str:
         ]
     )
 
-    return response.output_text
+    return response.choices[0].message.content or ""
 
 
 def wrap_response(question: str, state: list) -> str:
