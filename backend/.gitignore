@@ -1,0 +1,6 @@
+logs
+chat_history
+.venv
+.idea
+.env
+__pycache__
