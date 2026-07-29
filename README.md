@@ -1,1 +1,1 @@
-# stealGPT
+# gpt-wrapper
