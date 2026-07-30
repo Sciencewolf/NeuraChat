@@ -8,15 +8,21 @@ from chatbot_wrapper.chatbot_helper import (
 )
 from api_helper import get_chat_by_id
 
+from flask_cors import CORS
+
 
 app = Flask(__name__)
 app.config["IS_DEBUG"] = True
+
+CORS(app)
 
 api = Blueprint(
     "api",
     __name__,
     url_prefix="/t" if app.config["IS_DEBUG"] else "/api/chatbot/v1"
 )
+
+CORS(api)
 
 
 @api.route("/chat", methods=["POST"])
@@ -62,7 +68,7 @@ def api_get_model():
 @api.route("/model", methods=["POST"])
 def api_change_model():
     data = request.get_json(silent=True) or {}
-    model = data.get("model")
+    model = data.get("model", "")
 
     if not model:
         return jsonify({
@@ -86,7 +92,7 @@ def api_get_bot_name():
 @api.route("/botname", methods=["POST"])
 def api_change_bot_name():
     data = request.get_json(silent=True) or {}
-    bot_name = data.get("bot_name")
+    bot_name = data.get("bot_name", "")
 
     if not bot_name:
         return jsonify({
