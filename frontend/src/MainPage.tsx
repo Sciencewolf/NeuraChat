@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import getModel from './GetModel';
+import getModel, { changeModel } from './apihandler/GetModel.ts';
 import {
     type ChatMessage,
     type ToolName,
     makeChat,
-} from './StartChat';
+} from './apihandler/StartChat.ts';
 
 const CHAT_STATE_KEY = 'ai_state';
 
@@ -39,9 +39,11 @@ function MainPage() {
     const [userInput, setUserInput] = useState('');
     const [tool, setTool] = useState<ToolName>('');
     const [model, setModel] = useState('');
+    const [models, setModels] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [isChatLoading, setIsChatLoading] = useState(false);
     const [isModelLoading, setIsModelLoading] = useState(true);
+    const [isModelChanging, setIsModelChanging] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -49,10 +51,11 @@ function MainPage() {
 
         const loadModel = async () => {
             try {
-                const modelName = await getModel();
+                const modelCatalog = await getModel();
 
                 if (isMounted) {
-                    setModel(modelName);
+                    setModels(modelCatalog.models);
+                    setModel(modelCatalog.currentModel);
                 }
             } catch (caughtError) {
                 if (isMounted) {
@@ -83,7 +86,7 @@ function MainPage() {
 
     useEffect(() => {
         if (!isChatLoading) {
-            document.title = 'gpt-wrapper';
+            document.title = 'NeuraChat';
             return;
         }
 
@@ -97,14 +100,14 @@ function MainPage() {
 
         return () => {
             window.clearInterval(intervalId);
-            document.title = 'gpt-wrapper';
+            document.title = 'NeuraChat';
         };
     }, [isChatLoading]);
 
     const sendMessage = async () => {
         const question = userInput.trim();
 
-        if (!question || isChatLoading) {
+        if (!question || !model || isChatLoading || isModelChanging) {
             return;
         }
 
@@ -119,7 +122,12 @@ function MainPage() {
         ]);
 
         try {
-            const response = await makeChat(question, previousMessages, tool);
+            const response = await makeChat(
+                question,
+                previousMessages,
+                model,
+                tool,
+            );
 
             setMessages((currentMessages) => {
                 const updatedMessages = [...currentMessages];
@@ -153,6 +161,38 @@ function MainPage() {
         }
     };
 
+    const selectModel = async (selectedModel: string) => {
+        if (
+            !selectedModel ||
+            selectedModel === model ||
+            isModelChanging ||
+            isChatLoading
+        ) {
+            return;
+        }
+
+        try {
+            setError(null);
+            setIsModelChanging(true);
+
+            const savedModel = await changeModel(selectedModel);
+
+            setModel(savedModel);
+
+            if (!savedModel.startsWith('openai/')) {
+                setTool('');
+            }
+        } catch (caughtError) {
+            setError(
+                caughtError instanceof Error
+                    ? caughtError.message
+                    : 'A modellváltás sikertelen.',
+            );
+        } finally {
+            setIsModelChanging(false);
+        }
+    };
+
     const startNewChat = () => {
         sessionStorage.removeItem(CHAT_STATE_KEY);
         sessionStorage.removeItem('html_state');
@@ -166,13 +206,42 @@ function MainPage() {
     return (
         <div className="app">
             <nav className="chat-actions">
-                <span className="model-name">
-                    {isModelLoading
-                        ? 'Model betöltése...'
-                        : model
-                          ? `Model: ${model}`
-                          : 'Model nem érhető el'}
-                </span>
+                <div className="brand">
+                    <img
+                        className="brand-logo"
+                        src="/neurachat-icon.png"
+                        alt="NeuraChat logo"
+                    />
+                    <span className="brand-name">NeuraChat</span>
+                </div>
+
+                <div className="model-select-wrapper">
+                    <label className="model-label" htmlFor="model_select">
+                        {isModelChanging ? 'Mentés...' : 'Model'}
+                    </label>
+                    <select
+                        id="model_select"
+                        value={model}
+                        disabled={
+                            isModelLoading || isModelChanging || isChatLoading
+                        }
+                        onChange={(event) => {
+                            void selectModel(event.target.value);
+                        }}
+                    >
+                        {isModelLoading && (
+                            <option value="">Betöltés...</option>
+                        )}
+                        {!isModelLoading && models.length === 0 && (
+                            <option value="">Nincs elérhető modell</option>
+                        )}
+                        {models.map((modelName) => (
+                            <option value={modelName} key={modelName}>
+                                {modelName.replace('/', ' · ')}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
                 <button type="button" id="new_chat" onClick={startNewChat}>
                     <img
@@ -244,12 +313,20 @@ function MainPage() {
                     <select
                         id="tools"
                         value={tool}
-                        disabled={isChatLoading}
+                        disabled={
+                            isChatLoading ||
+                            isModelChanging ||
+                            !model.startsWith('openai/')
+                        }
                         onChange={(event) => {
                             setTool(event.target.value as ToolName);
                         }}
                     >
-                        <option value="">Add tool</option>
+                        <option value="">
+                            {model.startsWith('openai/')
+                                ? 'Add tool'
+                                : 'No tools available'}
+                        </option>
                         <option value="web_search">Web search</option>
                     </select>
                 </div>

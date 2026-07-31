@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "neurachat-frontend",
   "private": true,
   "version": "0.5",
   "type": "module",

@@ -1,1 +1,1 @@
-# Frontend for gpt-wrapper
+# NeuraChat Frontend

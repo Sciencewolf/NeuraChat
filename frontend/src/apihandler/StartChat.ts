@@ -39,6 +39,7 @@ function parseChatResponse(value: unknown): ChatResponse {
 export async function makeChat(
     question: string,
     state: ChatMessage[],
+    model: string,
     tool: ToolName,
 ): Promise<ChatResponse> {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -55,6 +56,7 @@ export async function makeChat(
         body: JSON.stringify({
             question,
             state,
+            model,
             tool,
         }),
     });
