@@ -29,6 +29,13 @@ def get_system_prompt() -> str:
 def get_model() -> str:
     return get_chatbot_settings()["model"]
 
+def get_models() -> list:
+    return get_chatbot_settings()["models"]
+
+
+def get_full_model_name() -> str:
+    return get_chatbot_settings()["full_model_name"]
+
 
 def get_bot_name() -> str:
     return get_chatbot_settings()["name"]
@@ -41,6 +48,9 @@ def change_bot_name(name: str) -> None:
 
 
 def change_model(model: str) -> None:
+    provider, model_name = model.split('/', 1)
     settings = get_chatbot_settings()
-    settings["model"] = model
+    settings["model"] = model_name
+    settings["full_model_name"] = f"{provider}/{model_name}"
+
     save_chatbot_settings(settings)
