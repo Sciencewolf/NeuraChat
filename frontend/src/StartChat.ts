@@ -1,40 +1,69 @@
+export interface ChatMessage {
+    user: string;
+    agent: string;
+}
+
 export interface ChatResponse {
-    reply?: string;
-    [key: string]: unknown;
+    reply: string;
 }
 
-function getUserState() {
-    const userInput = document.getElementById("user_input") as HTMLInputElement;
+export type ToolName = '' | 'web_search';
 
-    const state = sessionStorage.getItem("state") as string | null;
-
-    return [userInput.value, state]
+interface ChatApiResponse {
+    response?: unknown;
 }
 
-function setState(s: object) {
-    sessionStorage.setItem("state", JSON.stringify(s))
-}
+function parseChatResponse(value: unknown): ChatResponse {
+    let parsedValue = value;
 
-export async function makeChat(): Promise<ChatResponse> {
-    const [userVal, state] = getUserState()
-
-    const makeCall = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/chat`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                question: userVal,
-                state: state,
-            }),
+    if (typeof value === 'string') {
+        try {
+            parsedValue = JSON.parse(value) as unknown;
+        } catch {
+            return { reply: value };
         }
-    );
-
-    if (!makeCall.ok) {
-        throw new Error(`API hiba: ${makeCall.status}`);
     }
 
-    return await makeCall.json().then(r => r.response).then(r => JSON.parse(r)) as ChatResponse;
+    if (
+        typeof parsedValue === 'object' &&
+        parsedValue !== null &&
+        'reply' in parsedValue &&
+        typeof parsedValue.reply === 'string'
+    ) {
+        return { reply: parsedValue.reply };
+    }
+
+    throw new Error('Az API válasza nem tartalmaz érvényes reply mezőt.');
+}
+
+export async function makeChat(
+    question: string,
+    state: ChatMessage[],
+    tool: ToolName,
+): Promise<ChatResponse> {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+    if (!apiBaseUrl) {
+        throw new Error('A VITE_API_BASE_URL nincs beállítva.');
+    }
+
+    const apiResponse = await fetch(`${apiBaseUrl}/chat`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            question,
+            state,
+            tool,
+        }),
+    });
+
+    if (!apiResponse.ok) {
+        throw new Error(`API hiba: ${apiResponse.status}`);
+    }
+
+    const body = (await apiResponse.json()) as ChatApiResponse;
+
+    return parseChatResponse(body.response);
 }

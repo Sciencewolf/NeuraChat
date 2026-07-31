@@ -1,0 +1,256 @@
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    color: #ffffff;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #101e26;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    scroll-behavior: smooth;
+}
+
+body {
+    overflow-x: hidden;
+    background-color: #101e26;
+}
+
+button {
+    width: 10em;
+    height: 2.5em;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    background-color: gray;
+    transition: opacity 0.25s ease-in-out;
+}
+
+button:hover:not(:disabled) {
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.app {
+    min-height: 100%;
+    padding-bottom: 8.5rem;
+}
+
+.chat-actions {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1em;
+    padding: 2em;
+    background-color: #101e26;
+}
+
+.chat-actions button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+}
+
+.model-name {
+    color: #d6e1e7;
+    font-size: 0.9rem;
+}
+
+.chat {
+    display: flex;
+    width: min(50rem, calc(100% - 2rem));
+    margin: 0 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1em;
+}
+
+.message-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.user-input,
+.agent-response,
+.error-message {
+    width: fit-content;
+    max-width: min(42rem, 90%);
+    height: fit-content;
+    margin: 0;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 20px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.user-input {
+    align-self: flex-end;
+    color: rgb(90, 136, 223);
+    background-color: #000c04;
+}
+
+.agent-response {
+    align-self: flex-start;
+    color: wheat;
+    background-color: darkslategrey;
+}
+
+.waiting {
+    opacity: 0.8;
+}
+
+.error-message {
+    align-self: center;
+    color: #ffd7d7;
+    background-color: #7c2424;
+}
+
+.input {
+    position: fixed;
+    z-index: 3;
+    bottom: 0;
+    left: 50%;
+    display: flex;
+    width: 100%;
+    padding: 1.5rem max(1rem, calc((100% - 50rem) / 2));
+    transform: translateX(-50%);
+    align-items: center;
+    justify-content: center;
+    gap: 2em;
+    background: linear-gradient(transparent, #101e26 30%);
+}
+
+#input_text {
+    width: 50em;
+    max-width: 100%;
+    height: 4em;
+    padding: 0 1rem;
+    border: none;
+    border-radius: 10px;
+    font: inherit;
+}
+
+#input_text:focus {
+    outline: 2px solid rgb(90, 136, 223);
+    outline-offset: 2px;
+}
+
+.tool-select-wrapper {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.tool-select-wrapper::after {
+    position: absolute;
+    top: 50%;
+    right: 0.9rem;
+    color: #d6e1e7;
+    content: '▼';
+    font-size: 0.65rem;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+#tools {
+    min-width: 9.5rem;
+    height: 2.75rem;
+    padding: 0 2.25rem 0 0.9rem;
+    appearance: none;
+    border: 1px solid #526670;
+    border-radius: 10px;
+    color: #ffffff;
+    background-color: #263b46;
+    font: inherit;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+#tools:hover:not(:disabled) {
+    border-color: rgb(90, 136, 223);
+    background-color: #304b59;
+}
+
+#tools:focus {
+    outline: 2px solid rgb(90, 136, 223);
+    outline-offset: 2px;
+}
+
+#tools:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+#tools option {
+    color: #ffffff;
+    background-color: #263b46;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 600px) {
+    .chat-actions {
+        padding: 1rem;
+    }
+
+    .input {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    #input_text {
+        width: calc(100% - 0.75rem - 6em);
+    }
+
+    .tool-select-wrapper {
+        flex: 1 1 auto;
+    }
+
+    #tools {
+        width: 100%;
+    }
+
+    .input button {
+        width: 6em;
+    }
+
+    .user-input,
+    .agent-response,
+    .error-message {
+        font-size: 1rem;
+    }
+}
