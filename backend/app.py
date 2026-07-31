@@ -17,14 +17,13 @@ from flask_cors import CORS
 
 
 app = Flask(__name__)
-app.config["IS_DEBUG"] = True
 
 CORS(app)
 
 api = Blueprint(
     "api",
     __name__,
-    url_prefix="/t" if app.config["IS_DEBUG"] else "/api/chatbot/v1"
+    url_prefix="/api/v1/"
 )
 
 CORS(api)
