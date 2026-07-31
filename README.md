@@ -1,1 +1,1 @@
-# gpt-wrapper
+# NeuraChat
