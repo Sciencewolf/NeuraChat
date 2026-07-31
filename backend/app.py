@@ -27,7 +27,7 @@ api = Blueprint(
 )
 
 
-# Csak erről a domainről adunk CORS-engedélyt.
+# Only this origin is allowed to access the API.
 CORS(
     api,
     origins=[ALLOWED_ORIGIN],
@@ -36,14 +36,14 @@ CORS(
 )
 
 
-# A backend maga is visszautasítja a más originről érkező kéréseket.
+# The backend also rejects requests sent from any other origin.
 @api.before_request
 def restrict_origin():
     origin = request.headers.get("Origin")
 
     if origin != ALLOWED_ORIGIN:
         return jsonify({
-            "error": "Erről a domainről nem engedélyezett a kérés."
+            "error": "Requests from this origin are not allowed."
         }), 403
 
     return None
@@ -60,7 +60,7 @@ def start_chat():
 
     if model not in get_models():
         return jsonify({
-            "error": "Nem támogatott modell."
+            "error": "Unsupported model."
         }), 400
 
     provider, model_name = model.split("/", 1)
@@ -84,7 +84,7 @@ def start_chat():
 
         case _:
             return jsonify({
-                "error": "Nem támogatott modellszolgáltató."
+                "error": "Unsupported model provider."
             }), 400
 
     return jsonify({
@@ -126,7 +126,7 @@ def api_change_model():
 
     if model not in get_models():
         return jsonify({
-            "error": "Nem támogatott modell."
+            "error": "Unsupported model."
         }), 400
 
     change_model(model)
@@ -150,7 +150,7 @@ def api_change_bot_name():
 
     if not bot_name:
         return jsonify({
-            "error": "A bot_name mező megadása kötelező."
+            "error": "The bot_name field is required."
         }), 400
 
     change_bot_name(bot_name)
