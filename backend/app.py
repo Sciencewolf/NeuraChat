@@ -1,32 +1,52 @@
 from flask import Flask, request, jsonify, Blueprint
+from flask_cors import CORS
+
 from chatbot_wrapper.openai_chatbot_model import openai_wrap_response
+from chatbot_wrapper.google_chatbot_model import google_wrap_response
 
 from chatbot_wrapper.chatbot_helper import (
     get_full_model_name,
     get_models,
     change_model,
     get_bot_name,
-    change_bot_name
+    change_bot_name,
 )
 
-from chatbot_wrapper.google_chatbot_model import google_wrap_response
-
 from api_helper import get_chat_by_id
-
-from flask_cors import CORS
 
 
 app = Flask(__name__)
 
-CORS(app)
+ALLOWED_ORIGIN = "https://neurachatui.vercel.app"
+
 
 api = Blueprint(
     "api",
     __name__,
-    url_prefix="/api/v1/"
+    url_prefix="/api/v1",
 )
 
-CORS(api)
+
+# Csak erről a domainről adunk CORS-engedélyt.
+CORS(
+    api,
+    origins=[ALLOWED_ORIGIN],
+    methods=["GET", "POST", "OPTIONS", "HEAD"],
+    allow_headers=["Content-Type"],
+)
+
+
+# A backend maga is visszautasítja a más originről érkező kéréseket.
+@api.before_request
+def restrict_origin():
+    origin = request.headers.get("Origin")
+
+    if origin != ALLOWED_ORIGIN:
+        return jsonify({
+            "error": "Erről a domainről nem engedélyezett a kérés."
+        }), 403
+
+    return None
 
 
 @api.route("/chat", methods=["POST"])
@@ -36,14 +56,14 @@ def start_chat():
     model = data.get("model", get_full_model_name())
     question = data.get("question", "")
     state = data.get("state", [])
-    web_search = data.get("tool") == 'web_search'
+    web_search = data.get("tool") == "web_search"
 
     if model not in get_models():
         return jsonify({
             "error": "Nem támogatott modell."
         }), 400
 
-    provider, model_name = model.split('/', 1)
+    provider, model_name = model.split("/", 1)
     response: str | None
 
     match provider:
@@ -52,10 +72,16 @@ def start_chat():
                 question,
                 state,
                 model_name,
-                web_search=web_search
+                web_search=web_search,
             )
+
         case "google":
-            response = google_wrap_response(question, state, model_name)
+            response = google_wrap_response(
+                question,
+                state,
+                model_name,
+            )
+
         case _:
             return jsonify({
                 "error": "Nem támogatott modellszolgáltató."
@@ -89,7 +115,7 @@ def get_chat():
 def api_get_model():
     return jsonify({
         "model": get_full_model_name(),
-        "models": get_models()
+        "models": get_models(),
     })
 
 
@@ -138,4 +164,8 @@ app.register_blueprint(api)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True,
+    )
