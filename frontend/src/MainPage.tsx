@@ -6,6 +6,8 @@ import {
     makeChat,
 } from './apihandler/StartChat.ts';
 
+import { Analytics } from "@vercel/analytics/react"
+
 const CHAT_STATE_KEY = 'ai_state';
 
 function getStoredMessages(): ChatMessage[] {
@@ -204,135 +206,139 @@ function MainPage() {
     };
 
     return (
-        <div className="app">
-            <nav className="chat-actions">
-                <div className="brand">
-                    <img
-                        className="brand-logo"
-                        src="/neurachat-icon.png"
-                        alt="NeuraChat logo"
-                    />
-                    <span className="brand-name">NeuraChat</span>
-                </div>
-
-                <div className="model-select-wrapper">
-                    <label className="model-label" htmlFor="model_select">
-                        {isModelChanging ? 'Mentés...' : 'Model'}
-                    </label>
-                    <select
-                        id="model_select"
-                        value={model}
-                        disabled={
-                            isModelLoading || isModelChanging || isChatLoading
-                        }
-                        onChange={(event) => {
-                            void selectModel(event.target.value);
-                        }}
-                    >
-                        {isModelLoading && (
-                            <option value="">Betöltés...</option>
-                        )}
-                        {!isModelLoading && models.length === 0 && (
-                            <option value="">Nincs elérhető modell</option>
-                        )}
-                        {models.map((modelName) => (
-                            <option value={modelName} key={modelName}>
-                                {modelName.replace('/', ' · ')}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <button type="button" id="new_chat" onClick={startNewChat}>
-                    <img
-                        id="new_chat_img"
-                        width="24"
-                        height="24"
-                        src="https://img.icons8.com/material-outlined/24/plus-2-math--v1.png"
-                        alt=""
-                    />
-                    New chat
-                </button>
-            </nav>
-
-            <main className="chat" id="chat_div" aria-live="polite">
-                {messages.map((message, index) => (
-                    <div className="message-pair" key={index}>
-                        <p className="user-input">{message.user}</p>
-
-                        {message.agent ? (
-                            <p className="agent-response">{message.agent}</p>
-                        ) : (
-                            isChatLoading &&
-                            index === messages.length - 1 && (
-                                <p className="agent-response waiting">
-                                    Waiting...
-                                </p>
-                            )
-                        )}
+        <>
+            <div className="app">
+                <nav className="chat-actions">
+                    <div className="brand">
+                        <img
+                            className="brand-logo"
+                            src="/neurachat-icon.png"
+                            alt="NeuraChat logo"
+                        />
+                        <span className="brand-name">NeuraChat</span>
                     </div>
-                ))}
 
-                {error && (
-                    <p className="error-message" role="alert">
-                        {error}
-                    </p>
-                )}
+                    <div className="model-select-wrapper">
+                        <label className="model-label" htmlFor="model_select">
+                            {isModelChanging ? 'Mentés...' : 'Model'}
+                        </label>
+                        <select
+                            id="model_select"
+                            value={model}
+                            disabled={
+                                isModelLoading || isModelChanging || isChatLoading
+                            }
+                            onChange={(event) => {
+                                void selectModel(event.target.value);
+                            }}
+                        >
+                            {isModelLoading && (
+                                <option value="">Betöltés...</option>
+                            )}
+                            {!isModelLoading && models.length === 0 && (
+                                <option value="">Nincs elérhető modell</option>
+                            )}
+                            {models.map((modelName) => (
+                                <option value={modelName} key={modelName}>
+                                    {modelName.replace('/', ' · ')}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                <div ref={chatEndRef} />
-            </main>
+                    <button type="button" id="new_chat" onClick={startNewChat}>
+                        <img
+                            id="new_chat_img"
+                            width="24"
+                            height="24"
+                            src="https://img.icons8.com/material-outlined/24/plus-2-math--v1.png"
+                            alt=""
+                        />
+                        New chat
+                    </button>
+                </nav>
 
-            <footer className="input" id="input_div">
-                <label className="visually-hidden" htmlFor="input_text">
-                    Message the model
-                </label>
-                <input
-                    id="input_text"
-                    type="text"
-                    autoFocus
-                    placeholder="Message the model"
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    value={userInput}
-                    disabled={isChatLoading}
-                    onChange={(event) => {
-                        setUserInput(event.target.value);
-                    }}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                            event.preventDefault();
-                            void sendMessage();
-                        }
-                    }}
-                />
-                <div className="tool-select-wrapper">
-                    <label className="visually-hidden" htmlFor="tools">
-                        Tool kiválasztása
+                <main className="chat" id="chat_div" aria-live="polite">
+                    {messages.map((message, index) => (
+                        <div className="message-pair" key={index}>
+                            <p className="user-input">{message.user}</p>
+
+                            {message.agent ? (
+                                <p className="agent-response">{message.agent}</p>
+                            ) : (
+                                isChatLoading &&
+                                index === messages.length - 1 && (
+                                    <p className="agent-response waiting">
+                                        Waiting...
+                                    </p>
+                                )
+                            )}
+                        </div>
+                    ))}
+
+                    {error && (
+                        <p className="error-message" role="alert">
+                            {error}
+                        </p>
+                    )}
+
+                    <div ref={chatEndRef} />
+                </main>
+
+                <footer className="input" id="input_div">
+                    <label className="visually-hidden" htmlFor="input_text">
+                        Message the model
                     </label>
-                    <select
-                        id="tools"
-                        value={tool}
-                        disabled={
-                            isChatLoading ||
-                            isModelChanging ||
-                            !model.startsWith('openai/')
-                        }
+                    <input
+                        id="input_text"
+                        type="text"
+                        autoFocus
+                        placeholder="Message the model"
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        value={userInput}
+                        disabled={isChatLoading}
                         onChange={(event) => {
-                            setTool(event.target.value as ToolName);
+                            setUserInput(event.target.value);
                         }}
-                    >
-                        <option value="">
-                            {model.startsWith('openai/')
-                                ? 'Add tool'
-                                : 'No tools available'}
-                        </option>
-                        <option value="web_search">Web search</option>
-                    </select>
-                </div>
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                void sendMessage();
+                            }
+                        }}
+                    />
+                    <div className="tool-select-wrapper">
+                        <label className="visually-hidden" htmlFor="tools">
+                            Tool kiválasztása
+                        </label>
+                        <select
+                            id="tools"
+                            value={tool}
+                            disabled={
+                                isChatLoading ||
+                                isModelChanging ||
+                                !model.startsWith('openai/')
+                            }
+                            onChange={(event) => {
+                                setTool(event.target.value as ToolName);
+                            }}
+                        >
+                            <option value="">
+                                {model.startsWith('openai/')
+                                    ? 'Add tool'
+                                    : 'No tools available'}
+                            </option>
+                            <option value="web_search">Web search</option>
+                        </select>
+                    </div>
 
-            </footer>
-        </div>
+                </footer>
+            </div>
+
+            <Analytics />
+        </>
     );
 }
 
