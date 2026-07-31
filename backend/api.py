@@ -31,8 +31,9 @@ def start_chat():
 
     question = data.get("question", "")
     state = data.get("state", [])
+    web_search = data.get("tool") == 'web_search'
 
-    response = wrap_response(question, state)
+    response = wrap_response(question, state, web_search=web_search)
 
     return jsonify({
         "response": response

@@ -9,26 +9,29 @@ api_key = os.getenv("OPENAI_KEY")
 
 
 def create_chatbot():
-    chatbot = OpenAI(api_key=api_key)
-
-    return chatbot
+    return OpenAI(api_key=api_key)
 
 
-def make_api_call(question: str, state: list) -> str:
+def make_api_call(question: str, state: list, web_search: bool = False) -> str:
     bot = create_chatbot()
 
     content_to_ai = f"question: {question}\nstate: {state}"
 
-    response = bot.chat.completions.create(
+    tools = []
+    if web_search:
+        tools.append({"type": "web_search_preview"})
+
+    response = bot.responses.create(
         model=get_model(),
-        messages=[
+        input=[
             {"role": "system", "content": str(get_system_prompt())},
             {"role": "user", "content": content_to_ai},
-        ]
+        ],
+        tools=tools,
     )
 
-    return response.choices[0].message.content or ""
+    return response.output_text or ""
 
 
-def wrap_response(question: str, state: list) -> str:
-    return make_api_call(question, state)
+def wrap_response(question: str, state: list, web_search: bool = False) -> str:
+    return make_api_call(question, state, web_search)
