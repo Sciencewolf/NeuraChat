@@ -33,7 +33,7 @@ function parseChatResponse(value: unknown): ChatResponse {
         return { reply: parsedValue.reply };
     }
 
-    throw new Error('Az API válasza nem tartalmaz érvényes reply mezőt.');
+    throw new Error('The API response does not contain a valid reply field.');
 }
 
 export async function makeChat(
@@ -45,7 +45,7 @@ export async function makeChat(
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
     if (!apiBaseUrl) {
-        throw new Error('A VITE_API_BASE_URL nincs beállítva.');
+        throw new Error('VITE_API_BASE_URL is not configured.');
     }
 
     const apiResponse = await fetch(`${apiBaseUrl}/chat`, {
@@ -62,7 +62,7 @@ export async function makeChat(
     });
 
     if (!apiResponse.ok) {
-        throw new Error(`API hiba: ${apiResponse.status}`);
+        throw new Error(`API error: ${apiResponse.status}`);
     }
 
     const body = (await apiResponse.json()) as ChatApiResponse;

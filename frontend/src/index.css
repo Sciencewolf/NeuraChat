@@ -46,7 +46,7 @@ button:disabled {
 
 .app {
     min-height: 100%;
-    padding-bottom: 8.5rem;
+    padding-bottom: calc(var(--composer-height, 8.5rem) + 1rem);
 }
 
 .chat-actions {
@@ -103,7 +103,7 @@ button:disabled {
     top: 50%;
     right: 0.9rem;
     color: #d6e1e7;
-    content: '▼';
+    content: '\25BC';
     font-size: 0.65rem;
     pointer-events: none;
     transform: translateY(-50%);
@@ -176,20 +176,27 @@ button:disabled {
     width: 100%;
     padding: 1.5rem max(1rem, calc((100% - 50rem) / 2));
     transform: translateX(-50%);
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    gap: 2em;
+    gap: 1em;
     background: linear-gradient(transparent, #101e26 30%);
 }
 
 #input_text {
+    flex: 1 1 auto;
     width: 50em;
     max-width: 100%;
-    height: 4em;
-    padding: 0 1rem;
+    min-width: 0;
+    min-height: 3.5rem;
+    max-height: 12rem;
+    padding: 0.9rem 1rem;
+    overflow-y: auto;
+    resize: none;
     border: none;
     border-radius: 10px;
     font: inherit;
+    line-height: 1.4;
+    tab-size: 4;
 }
 
 #input_text:focus {
@@ -207,7 +214,7 @@ button:disabled {
     top: 50%;
     right: 0.9rem;
     color: #d6e1e7;
-    content: '▼';
+    content: '\25BC';
     font-size: 0.65rem;
     pointer-events: none;
     transform: translateY(-50%);

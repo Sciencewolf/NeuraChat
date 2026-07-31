@@ -13,13 +13,13 @@ async function getModel(): Promise<ModelCatalog> {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
     if (!apiBaseUrl) {
-        throw new Error('A VITE_API_BASE_URL nincs beállítva.');
+        throw new Error('VITE_API_BASE_URL is not configured.');
     }
 
     const apiResponse = await fetch(`${apiBaseUrl}/model`);
 
     if (!apiResponse.ok) {
-        throw new Error(`A modell lekérése sikertelen: ${apiResponse.status}`);
+        throw new Error(`Failed to load models: ${apiResponse.status}`);
     }
 
     const body = (await apiResponse.json()) as ModelResponse;
@@ -29,7 +29,7 @@ async function getModel(): Promise<ModelCatalog> {
         !Array.isArray(body.models) ||
         !body.models.every((model) => typeof model === 'string')
     ) {
-        throw new Error('Az API nem adott vissza érvényes modelllistát.');
+        throw new Error('The API did not return a valid model list.');
     }
 
     return {
@@ -42,7 +42,7 @@ export async function changeModel(model: string): Promise<string> {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
     if (!apiBaseUrl) {
-        throw new Error('A VITE_API_BASE_URL nincs beállítva.');
+        throw new Error('VITE_API_BASE_URL is not configured.');
     }
 
     const apiResponse = await fetch(`${apiBaseUrl}/model`, {
@@ -59,12 +59,12 @@ export async function changeModel(model: string): Promise<string> {
         throw new Error(
             typeof body.error === 'string'
                 ? body.error
-                : `A modellváltás sikertelen: ${apiResponse.status}`,
+                : `Failed to change the model: ${apiResponse.status}`,
         );
     }
 
     if (typeof body.model !== 'string') {
-        throw new Error('Az API nem igazolta vissza a kiválasztott modellt.');
+        throw new Error('The API did not confirm the selected model.');
     }
 
     return body.model;

@@ -47,6 +47,8 @@ function MainPage() {
     const [isModelLoading, setIsModelLoading] = useState(true);
     const [isModelChanging, setIsModelChanging] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const composerRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -64,7 +66,7 @@ function MainPage() {
                     setError(
                         caughtError instanceof Error
                             ? caughtError.message
-                            : 'Ismeretlen hiba történt.',
+                            : 'An unknown error occurred.',
                     );
                 }
             } finally {
@@ -85,6 +87,42 @@ function MainPage() {
         sessionStorage.setItem(CHAT_STATE_KEY, JSON.stringify(messages));
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    useEffect(() => {
+        const input = inputRef.current;
+
+        if (!input) {
+            return;
+        }
+
+        input.style.height = 'auto';
+        input.style.height = `${input.scrollHeight}px`;
+    }, [userInput]);
+
+    useEffect(() => {
+        const composer = composerRef.current;
+
+        if (!composer) {
+            return;
+        }
+
+        const updateComposerHeight = () => {
+            document.documentElement.style.setProperty(
+                '--composer-height',
+                `${composer.offsetHeight}px`,
+            );
+        };
+
+        const resizeObserver = new ResizeObserver(updateComposerHeight);
+
+        resizeObserver.observe(composer);
+        updateComposerHeight();
+
+        return () => {
+            resizeObserver.disconnect();
+            document.documentElement.style.removeProperty('--composer-height');
+        };
+    }, []);
 
     useEffect(() => {
         if (!isChatLoading) {
@@ -156,7 +194,7 @@ function MainPage() {
             setError(
                 caughtError instanceof Error
                     ? caughtError.message
-                    : 'Ismeretlen hiba történt.',
+                    : 'An unknown error occurred.',
             );
         } finally {
             setIsChatLoading(false);
@@ -188,7 +226,7 @@ function MainPage() {
             setError(
                 caughtError instanceof Error
                     ? caughtError.message
-                    : 'A modellváltás sikertelen.',
+                    : 'Failed to change the model.',
             );
         } finally {
             setIsModelChanging(false);
@@ -220,7 +258,7 @@ function MainPage() {
 
                     <div className="model-select-wrapper">
                         <label className="model-label" htmlFor="model_select">
-                            {isModelChanging ? 'Mentés...' : 'Model'}
+                        {isModelChanging ? 'Saving...' : 'Model'}
                         </label>
                         <select
                             id="model_select"
@@ -233,14 +271,14 @@ function MainPage() {
                             }}
                         >
                             {isModelLoading && (
-                                <option value="">Betöltés...</option>
+                            <option value="">Loading...</option>
                             )}
                             {!isModelLoading && models.length === 0 && (
-                                <option value="">Nincs elérhető modell</option>
+                            <option value="">No models available</option>
                             )}
                             {models.map((modelName) => (
                                 <option value={modelName} key={modelName}>
-                                    {modelName.replace('/', ' · ')}
+                                    {modelName.replace('/', ' - ')}
                                 </option>
                             ))}
                         </select>
@@ -285,13 +323,18 @@ function MainPage() {
                     <div ref={chatEndRef} />
                 </main>
 
-                <footer className="input" id="input_div">
+                <footer
+                    className="input"
+                    id="input_div"
+                    ref={composerRef}
+                >
                     <label className="visually-hidden" htmlFor="input_text">
                         Message the model
                     </label>
-                    <input
+                    <textarea
+                        ref={inputRef}
                         id="input_text"
-                        type="text"
+                        rows={1}
                         autoFocus
                         placeholder="Message the model"
                         autoComplete="off"
@@ -303,7 +346,32 @@ function MainPage() {
                             setUserInput(event.target.value);
                         }}
                         onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
+                            if (event.key === 'Tab') {
+                                event.preventDefault();
+
+                                const input = event.currentTarget;
+                                const selectionStart = input.selectionStart;
+                                const selectionEnd = input.selectionEnd;
+                                const cursorPosition = selectionStart + 1;
+
+                                setUserInput((currentValue) =>
+                                    `${currentValue.slice(0, selectionStart)}\t${currentValue.slice(selectionEnd)}`,
+                                );
+
+                                window.requestAnimationFrame(() => {
+                                    inputRef.current?.setSelectionRange(
+                                        cursorPosition,
+                                        cursorPosition,
+                                    );
+                                });
+
+                                return;
+                            }
+
+                            if (
+                                event.key === 'Enter' &&
+                                (event.ctrlKey || event.metaKey)
+                            ) {
                                 event.preventDefault();
                                 void sendMessage();
                             }
@@ -311,7 +379,7 @@ function MainPage() {
                     />
                     <div className="tool-select-wrapper">
                         <label className="visually-hidden" htmlFor="tools">
-                            Tool kiválasztása
+                            Select a tool
                         </label>
                         <select
                             id="tools"
@@ -333,6 +401,23 @@ function MainPage() {
                             <option value="web_search">Web search</option>
                         </select>
                     </div>
+
+                    <button
+                        type="button"
+                        id="btn_send"
+                        title="Send message (Ctrl+Enter)"
+                        disabled={
+                            isChatLoading ||
+                            isModelChanging ||
+                            !model ||
+                            !userInput.trim()
+                        }
+                        onClick={() => {
+                            void sendMessage();
+                        }}
+                    >
+                        {isChatLoading ? 'Sending...' : 'Send'}
+                    </button>
 
                 </footer>
             </div>
