@@ -1,52 +1,114 @@
-import json
-import uuid
+from flask import Request, jsonify, Response
+
+from chatbot_wrapper.chatbot_helper import get_full_model_name, get_models, change_model, change_bot_name, get_bot_name
+from chatbot_wrapper.google_chatbot_model import google_wrap_response
+from chatbot_wrapper.openai_chatbot_model import openai_wrap_response
 
 
-def save_chat(content: str) -> None:
-    chat_content = {'chat_id': str(uuid.uuid7()), 'content': content}
+def origin_api(request: Request, allowed_origins: list) -> tuple[Response, int] | None:
+    origin = request.headers.get("Origin")
+
+    if origin not in allowed_origins:
+        return jsonify({
+            "error": "Requests from this origin are not allowed."
+        }), 403
+
+    return None
 
 
-    with open('chat_history/chats.json', 'a+') as f:
-        json.dump(chat_content, f)
+def chat_api(request: Request) -> tuple[Response, int] | Response:
+    if request.method == "GET":
+        return jsonify({
+            "response": "Not implemented."
+        }), 501
+
+    data = request.get_json(silent=True) or {}
+
+    model = data.get("model", get_full_model_name())
+    question = data.get("question", "")
+    state = data.get("state", [])
+    web_search = data.get("tool") == "web_search"
+
+    if model not in get_models():
+        return jsonify({
+            "error": "Unsupported model."
+        }), 400
+
+    provider, model_name = model.split("/", 1)
+    response: str | None
+
+    match provider:
+        case "openai":
+            response = openai_wrap_response(
+                question,
+                state,
+                model_name,
+                web_search=web_search,
+            )
+
+        case "google":
+            response = google_wrap_response(
+                question,
+                state,
+                model_name,
+            )
+
+        case _:
+            return jsonify({
+                "error": "Unsupported model provider."
+            }), 400
+
+    return jsonify({
+        "response": response,
+        "model": model_name,
+        "is_web_search": web_search
+    })
 
 
-def get_chat_by_id(chat_id: str) -> str:
-    if chat_id == "":
-        return "No such data"
-
-    with open('chat_history/chats.json', 'r+') as f:
-        chat_history = json.load(f)
-
-        try: return chat_history[chat_id]
-        except: return "No such data"
-
-def get_chat_history() -> dict:
-    with open('chat_history/chats.json', 'r+') as f:
-        chat_history = json.load(f)
-
-        return chat_history
+def save_chat_api(request: Request) -> tuple[Response, int] | Response:
+    return jsonify({
+        "response": "Not implemented."
+    }), 501
 
 
-def update_chat(chat_id: str, content: str) -> None:
-    with open('chat_history/chats.json', 'r+') as f:
-        chat_history = json.load(f)
+def model_api(request: Request) -> tuple[Response, int] | Response:
+    if request.method == 'GET':
+        return jsonify({
+            "model": get_full_model_name(),
+            "models": get_models(),
+        })
 
-        chat_history[chat_id] = content
+    data = request.get_json(silent=True) or {}
+    model = data.get("model", "")
 
-        with open('chat_history/chats.json', 'w+') as file:
-            json.dump(chat_history, file)
+    if model not in get_models():
+        return jsonify({
+            "error": "Unsupported model."
+        }), 400
+
+    change_model(model)
+
+    return jsonify({
+        "model": model
+    })
 
 
-def delete_chat(chat_id: str) -> None:
-    if chat_id == "":
-        return
+def botname_api(request: Request) -> tuple[Response, int] | Response:
+    if request.method == 'GET':
+        return jsonify({
+            "bot_name": get_bot_name()
+        })
 
-    with open('chat_history/chats.json', 'r+') as f:
-        chat_history = json.load(f)
+    data = request.get_json(silent=True) or {}
+    bot_name = data.get("bot_name", "")
 
-        for chat in chat_history:
-            if chat['chat_id'] == chat_id:
-                del chat_history[chat_id]
+    if not bot_name:
+        return jsonify({
+            "error": "The bot_name field is required."
+        }), 400
 
-        with open('chat_history/chats.json', 'w+') as file:
-            json.dump(chat_history, file)
+    change_bot_name(bot_name)
+
+    return jsonify({
+        "bot_name": bot_name
+    })
