@@ -1,26 +1,32 @@
 export interface ChatMessage {
     user: string;
     agent: string;
+    model?: string;
+    is_web_search?: boolean;
 }
 
 export interface ChatResponse {
     reply: string;
+    model: string;
+    is_web_search?: boolean;
 }
 
 export type ToolName = '' | 'web_search';
 
 interface ChatApiResponse {
     response?: unknown;
+    model?: unknown;
+    is_web_search?: boolean;
 }
 
-function parseChatResponse(value: unknown): ChatResponse {
+function parseReply(value: unknown): string {
     let parsedValue = value;
 
     if (typeof value === 'string') {
         try {
             parsedValue = JSON.parse(value) as unknown;
         } catch {
-            return { reply: value };
+            return value;
         }
     }
 
@@ -30,7 +36,7 @@ function parseChatResponse(value: unknown): ChatResponse {
         'reply' in parsedValue &&
         typeof parsedValue.reply === 'string'
     ) {
-        return { reply: parsedValue.reply };
+        return parsedValue.reply;
     }
 
     throw new Error('The API response does not contain a valid reply field.');
@@ -67,5 +73,13 @@ export async function makeChat(
 
     const body = (await apiResponse.json()) as ChatApiResponse;
 
-    return parseChatResponse(body.response);
+    if (typeof body.model !== 'string') {
+        throw new Error('The API response does not contain a valid model name.');
+    }
+
+    return {
+        reply: parseReply(body.response),
+        model: body.model,
+        is_web_search: body.is_web_search
+    };
 }

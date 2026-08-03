@@ -9,7 +9,7 @@ export interface ModelCatalog {
     models: string[];
 }
 
-async function getModel(): Promise<ModelCatalog> {
+async function model(): Promise<ModelCatalog> {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
     if (!apiBaseUrl) {
@@ -70,4 +70,4 @@ export async function changeModel(model: string): Promise<string> {
     return body.model;
 }
 
-export default getModel;
+export default model;
