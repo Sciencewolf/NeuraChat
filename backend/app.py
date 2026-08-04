@@ -7,7 +7,7 @@ from chatbot_wrapper.chatbot_helper import BackendConfigurationError
 
 app = Flask(__name__)
 
-ALLOWED_ORIGINS = ["https://neurachatui.vercel.app", "http://localhost:5173"]
+ALLOWED_ORIGINS = ["https://neurachat.martonaron.dev", "http://localhost:5173"]
 
 CORS(
     app,
