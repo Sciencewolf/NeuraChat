@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any
 
 from dotenv import load_dotenv
@@ -8,20 +9,42 @@ from supabase import Client, create_client
 
 load_dotenv()
 
-db: Client = create_client(
-    supabase_url=os.getenv("SUPABASE_URL") or '',
-    supabase_key=os.getenv("SUPABASE_KEY") or '',
-)
+
+class BackendConfigurationError(RuntimeError):
+    """Raised when a required backend environment variable is missing."""
 
 
-def get_chatbot_settings() -> list[Any]:
-    settings: APIResponse = db.table('chatbot').select("*").eq("id", 1).execute()
+@lru_cache(maxsize=1)
+def get_db() -> Client:
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_KEY")
+
+    if not supabase_url or not supabase_key:
+        raise BackendConfigurationError(
+            "SUPABASE_URL and SUPABASE_KEY must be configured."
+        )
+
+    return create_client(
+        supabase_url=supabase_url,
+        supabase_key=supabase_key,
+    )
+
+
+def get_chatbot_settings() -> dict[str, Any]:
+    settings: APIResponse = (
+        get_db().table('chatbot').select("*").eq("id", 1).execute()
+    )
+
+    if not settings.data:
+        raise BackendConfigurationError(
+            "The chatbot settings row with id 1 does not exist."
+        )
 
     return settings.data[0]
 
 
-def save_chatbot_settings(settings: dict) -> None:
-    db.table('chatbot').update({
+def save_chatbot_settings(settings: dict[str, Any]) -> None:
+    get_db().table('chatbot').update({
         "system_prompt": settings["system_prompt"],
         "name": settings["name"],
         "full_model_name": settings["full_model_name"],

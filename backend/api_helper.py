@@ -8,7 +8,7 @@ from chatbot_wrapper.openai_chatbot_model import openai_wrap_response
 def origin_api(request: Request, allowed_origins: list) -> tuple[Response, int] | None:
     origin = request.headers.get("Origin")
 
-    if origin not in allowed_origins:
+    if origin is not None and origin not in allowed_origins:
         return jsonify({
             "error": "Requests from this origin are not allowed."
         }), 403
